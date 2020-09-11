@@ -1,72 +1,71 @@
 #!/usr/bin/python3
-"""New Funtion amenities"""
-from api.v1.views import app_views
-from models.user import User
+""" All Users """
 from models import storage
-from flask import jsonify, abort, request, make_response
+from api.v1.views import app_views
+from flask import jsonify, abort, request
+from models.user import User
 
 
-@app_views.route('/users', methods=['GET'], strict_slashes=False)
-def get_all_users():
-    """Retrieves the list of all User objects"""
-    list_dict = []
-    for obj in storage.all(User).values():
-        list_dict.append(obj.to_dict())
-    return make_response(jsonify(list_dict), 200)
+@app_views.route("/users", methods=['GET'], strict_slashes=False)
+def all_users():
+    """ return all Users of the base """
+    dic = []
+    users = storage.all(User).items()
+    for key, value in users:
+        dic.append(value.to_dict())
+    return jsonify(dic)
 
 
-@app_views.route('/users/<string:user_id>', methods=['GET'],
-                 strict_slashes=False)
-def get_user_by_id(user_id):
-    """Retrieves a User object"""
-    obj = storage.get(User, user_id)
-    if (obj):
-        return make_response(jsonify(obj.to_dict()), 200)
+@app_views.route('/users/<user_id>', methods=['GET'], strict_slashes=False)
+def user_id(user_id):
+    """return the user id """
+    user = storage.get(User, user_id)
+    if user:
+        return jsonify(user.to_dict())
     else:
         abort(404)
 
 
-@app_views.route('/users/<string:user_id>', methods=['DELETE'],
+@app_views.route('/users/<user_id>', methods=['DELETE'],
                  strict_slashes=False)
-def delete_user_by_id(user_id):
-    """Deletes a User object"""
-    obj = storage.get(User, user_id)
-    if (obj):
-        storage.delete(obj)
+def delete_user(user_id):
+    """ Delete method """
+    state = storage.get(User, user_id)
+    if state:
+        storage.delete(state)
         storage.save()
-        return make_response(jsonify({}), 200)
+        return jsonify({})
     else:
         abort(404)
 
 
 @app_views.route('/users', methods=['POST'], strict_slashes=False)
-def post_user_create():
-    """Creates a User"""
-    conten = request.get_json()
-    if conten is None:
-        return make_response("Not a JSON", 400)
-    if conten.get('email') is None:
-        return make_response("Missing email", 400)
-    elif conten.get('password') is None:
-        return make_response("Missing password", 400)
-    else:
-        new_obj = User(**conten)
-        storage.new(new_obj)
-        storage.save()
-    return make_response(jsonify(new_obj.to_dict()), 201)
-
-
-@app_views.route('/users/<string:user_id>', methods=['PUT'],
-                 strict_slashes=False)
-def put_user(user_id):
-    """Updates a User object"""
-    user = storage.get("User", user_id)
-    if user is None:
-        abort(404)
+def create_user():
+    """ Create a User with Post method """
     if not request.get_json():
-        return make_response(jsonify({'error': 'Not a JSON'}), 400)
-    for attr, val in request.get_json().items():
-        if attr not in ['id', 'email', 'created_at', 'updated_at']:
-            setattr(user, attr, val)
+        abort(400, description="Not a JSON")
+    if 'email' not in request.get_json():
+        abort(400, description="Missing email")
+    if 'password' not in request.get_json():
+        abort(400, description="Missing password")
+    kwargs = request.get_json()
+    user = User(**kwargs)
+    storage.new(user)
     storage.save()
-    return jsonify(user.to_dict())
+    return (jsonify(user.to_dict()), 201)
+
+
+@app_views.route('/users/<user_id>', methods=['PUT'], strict_slashes=False)
+def upd_user(user_id):
+    """ Update an User object """
+    user = storage.get(User, user_id)
+    if not user:
+        abort(404)
+    json_content = request.get_json()
+    if json_content is None:
+        abort(400, description='Not a JSON')
+    for key, value in json_content.items():
+        if key != 'id' and key != 'created_ad' and key != 'updated_at':
+            setattr(user, key, value)
+    storage.save()
+    return (jsonify(user.to_dict()), 200)

@@ -18,8 +18,6 @@ import json
 import os
 import pep8
 import unittest
-from models import storage
-
 DBStorage = db_storage.DBStorage
 classes = {"Amenity": Amenity, "City": City, "Place": Place,
            "Review": Review, "State": State, "User": User}
@@ -68,6 +66,24 @@ test_db_storage.py'])
                              "{:s} method needs a docstring".format(func[0]))
             self.assertTrue(len(func[1].__doc__) >= 1,
                             "{:s} method needs a docstring".format(func[0]))
+    
+    def test_db_storage_get(self):
+        """ test get """
+        DBStorage().reload()
+        sta_name = State(name='Alabama')
+        DBStorage().new(sta_name)
+        DBStorage().save()
+        result_get = DBStorage().get(State, sta_name.id)
+        self.assertEqual(type(result_get), State)
+
+    def test_db_storage_count(self):
+        """ test count """
+        DBStorage().reload()
+        cont = DBStorage().count()
+        sta_name = State(name='Alabama')
+        DBStorage().new(sta_name)
+        DBStorage().save()
+        self.assertEqual(cont + 1, DBStorage().count())
 
 
 class TestFileStorage(unittest.TestCase):
@@ -88,26 +104,3 @@ class TestFileStorage(unittest.TestCase):
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_save(self):
         """Test that save properly saves objects to file.json"""
-
-
-class test_bnb_v3(unittest.TestCase):
-    """Test new method get"""
-
-    def testing_get_no_id(self):
-        """testing get with no id param"""
-        first_state_id = None
-        self.assertTrue("{}".format(storage.get("State", first_state_id),
-                                    None))
-
-    def testing_count(self):
-        """testing count with no parameters"""
-        self.assertTrue("{}".format(storage.count(), 48))
-
-    def testing_count_with_params(self):
-        """testing count with parameters"""
-        self.assertTrue("{}".format(storage.count("State")), 16)
-
-    def testing_get(self):
-        """testing get with no cls param"""
-        first_state_id = list(storage.all(State).values())[0].id
-        self.assertTrue("{}".format(storage.get("State", first_state_id), 0))
